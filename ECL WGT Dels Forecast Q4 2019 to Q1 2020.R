@@ -11,24 +11,29 @@ rm(list=ls())
 
 
 # Load the forecasting package
-library(fpp2)
+library(forecast)
 
 # Load interactive plotting package
 library(plotly)
 
 # Load data into dataframe
-data <- read.csv('WGT Deliveries 0717_to_0719.csv')
+data <- read.csv('WGT Deliveries 0716_to_0619.csv')
 
 
 # Declare this as time series data
-Y <- ts(data[, 2], start = c(2017,1), end = c(2019,6), frequency = 104)
+Y <- ts(data[, 2], start = c(2016,7), end = c(2019,6), frequency = 52)
+
+# Subset the timeseries (Jan 2019 to Jun 2019)
+Z <- window(Y, start=c(2016, 9), end=c(2017, 2))
+# Plot series
+plot(Z)
 
 ##################################################
 # Preliminary analysis
 ##################################################
 # Time plot
 autoplot(Y) +
-        ggtitle("Time Plot: Wellington(Ngaio) Deliveries 2017 - 2018 per Week") +
+        ggtitle("Time Plot: Wellington(Ngaio) Deliveries 2016 - 2018 per Week") +
         ylab("# Deliveries")
 
 # Data has a slight upward trend trend.
@@ -36,7 +41,7 @@ autoplot(Y) +
 DY <- diff(Y)
 # Time plot of difference data.
 autoplot(DY) +
-        ggtitle("Time Plot: Change in Wellington(Ngaio) Deliveries 2017 - 2019 per Week") +
+        ggtitle("Time Plot: Change in Wellington(Ngaio) Deliveries 2016 - 2019 per Week") +
         ylab("# Deliveries")
 # Series appears trend-stationary, use to investigate seasonality.
 ggseasonplot(DY) +
@@ -60,13 +65,15 @@ ggseasonplot(DY) +
 ####################################################
 
 # Following produces NaN results en mass.  Cannot apply to current data.
-# fit <- snaive(DY)
-# print(summary(fit))
-# checkresiduals(fit)
+fit <- snaive(DY)
+print(summary(fit))
+checkresiduals(fit)
 
 fit_ets <- ets(Y) # Residuals = 0.1508
 print(summary(fit_ets))
 checkresiduals(fit_ets)
+
+plot(stlf(Y, lambda=0))
 
 ###############################
 # Fit an ARIMA model.
@@ -76,6 +83,11 @@ fit_arima <- auto.arima(Y, d=1, D=1, stepwise = FALSE, approximation = FALSE, tr
 ###############################
 # Forecast with ETS model.
 ###############################
-fcast <- forecast(fit_arima, h = 26)
+fcast <- forecast(fit_arima, h = 6)
 autoplot(fcast)
 print(summary(fcast))
+
+###############################
+# Produce interactive line chart using plotly
+###############################
+
