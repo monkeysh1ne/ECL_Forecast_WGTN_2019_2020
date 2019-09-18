@@ -17,35 +17,38 @@ library(forecast)
 library(plotly)
 
 # Load data into dataframe
-data <- read.csv('WGT Deliveries 0716_to_0619.csv')
+data <- read.csv('WGT Deliveries 0716_to_0619.csv', stringsAsFactors = FALSE)
+
+# Plot data before timeseries conversion
+plot(WGTN_DEL ~ WE_DATE, data=data)
 
 
 # Declare this as time series data
-Y <- ts(data[, 2], start = c(2016,7), end = c(2019,6), frequency = 52)
+tsData <- ts(data[, 2], start = c(2016,7), end = c(2019,6), frequency = 52)
 
 # Subset the timeseries (Jan 2019 to Jun 2019)
-Z <- window(Y, start=c(2016, 9), end=c(2017, 2))
+Z <- window(tsData, start=c(2016, 9), end=c(2017, 2))
 # Plot series
-plot(Z)
+plot(tsData)
 
 ##################################################
 # Preliminary analysis
 ##################################################
 # Time plot
-autoplot(Y) +
-        ggtitle("Time Plot: Wellington(Ngaio) Deliveries 2016 - 2018 per Week") +
+autoplot(tsData) +
+        ggtitle("Time Plot: Wellington(Ngaio) Deliveries 2016 - 2019 per Week") +
         ylab("# Deliveries")
 
 # Data has a slight upward trend trend.
 # Take first difference of data to remove trend.
-DY <- diff(Y)
+diff_tsData <- diff(tsData)
 # Time plot of difference data.
-autoplot(DY) +
+autoplot(diff_tsData) +
         ggtitle("Time Plot: Change in Wellington(Ngaio) Deliveries 2016 - 2019 per Week") +
         ylab("# Deliveries")
 # Series appears trend-stationary, use to investigate seasonality.
-ggseasonplot(DY) +
-        ggtitle("Seasonal Plot: Change in Weekly Deliveries, Wellington(Ngaio) 2017 - 2019")
+ggseasonplot(diff_tsData) +
+        ggtitle("Seasonal Plot: Change in Weekly Deliveries, Wellington(Ngaio) 2016 - 2019")
 
 # Look at another seasonal plot, the subseries plot. Only possible when observations in whole year multiples.
 # ggsubseriesplot(DY)
@@ -65,20 +68,20 @@ ggseasonplot(DY) +
 ####################################################
 
 # Following produces NaN results en mass.  Cannot apply to current data.
-fit <- snaive(DY)
+fit <- snaive(diff_tsData)
 print(summary(fit))
 checkresiduals(fit)
 
-fit_ets <- ets(Y) # Residuals = 0.1508
+fit_ets <- ets(tsData) # Residuals = 0.1508
 print(summary(fit_ets))
 checkresiduals(fit_ets)
 
-plot(stlf(Y, lambda=0))
+plot(stlf(tsData, lambda=0))
 
 ###############################
 # Fit an ARIMA model.
 ###############################
-fit_arima <- auto.arima(Y, d=1, D=1, stepwise = FALSE, approximation = FALSE, trace = TRUE)
+fit_arima <- auto.arima(tsData, d=1, D=1, stepwise = FALSE, approximation = FALSE, trace = TRUE)
 
 ###############################
 # Forecast with ETS model.
